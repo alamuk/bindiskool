@@ -1,0 +1,166 @@
+Here’s a single, copy-paste Replit Agent prompt that will brief it to build your entire BirdiSkool website (brand colours/fonts included), wire forms to GoHighLevel, and seed 5 blog posts. It specifies stack, pages, content, SEO, assets, and acceptance tests.
+
+⸻
+
+REPLIT AGENT PROMPT (copy everything below):
+
+You are building a production-ready marketing website for BirdiSkool.
+
+Brand
+	•	Name: BirdiSkool
+	•	Tagline (Hero): H1: “Your private practice should set you free.” H2: “BirdiSkool shows healthcare professionals how to turn skill into scale, so you can create the impact, income, and lifestyle you deserve.”
+	•	Colours:
+	•	Deep Indigo #1B1F3B (primary dark)
+	•	Royal Blue #2D5BE3 (CTA / links)
+	•	Pure White #FFFFFF (background)
+	•	Emerald Green #28A87D (success accents)
+	•	Bright Gold #E2B93B (premium accents, Conclave)
+	•	Slate Grey #6E738A (muted text)
+	•	Fonts:
+	•	Headings: Playfair Display
+	•	Body/UI: Inter (or Lato)
+	•	Optional UI accents: Montserrat for buttons/nav
+
+Stack & Setup
+	•	Framework: Next.js 14 (App Router), React, TypeScript.
+	•	Styling: Tailwind CSS + shadcn/ui.
+	•	Icons: lucide-react.
+	•	Content: MDX for blog.
+	•	Forms: Submit to GoHighLevel via serverless API route that forwards to a GHL Form/Workflow Webhook URL (env var).
+	•	Email: contact@birdiskool.com used in meta, mailto links.
+	•	SEO: next-seo or custom metadata, OG images, sitemap, robots.
+	•	Analytics: placeholder for GA4 env var.
+	•	Deployment: Vercel-ready.
+
+Create .env.local.example with:
+
+GHL_WEBHOOK_URL=https://hooks.gohighlevel.com/xxxx
+NEXT_PUBLIC_SITE_URL=https://www.birdiskool.com
+NEXT_PUBLIC_GA_ID=G-XXXXXXX
+
+Site Map
+	•	/ Home
+	•	/implementer 12-Week Implementer Program
+	•	/conclave BirdiSkool Conclave (invite-only)
+	•	/crm BirdiSkool Core (CRM) — “Coming Soon” + waitlist form
+	•	/about About BirdiSkool (founder authority)
+	•	/contact Contact page (form to GHL)
+	•	/privacy Privacy
+	•	/terms Terms
+	•	/blog Blog index
+	•	/blog/[slug] Blog post (MDX)
+
+Global Nav & Footer
+	•	Nav: Home, Implementer, Conclave, CRM, Blog, About, Contact
+	•	Footer: © BirdiSkool Ltd, Privacy, Terms, Contact (mailto), social placeholders.
+
+Pages (copy + structure)
+
+Home /
+	•	Hero (H1/H2 above), Primary CTA “Apply for the Accelerator”, Secondary CTA “Join CRM Waitlist”.
+	•	Problem: “Clinical brilliance ≠ business success.”
+	•	Ideal Future: concise para (consistent with prior hero copy).
+	•	Why agencies/courses fail; BirdiSkool Difference: built by 7-figure surgeon; learning + implementation.
+	•	3 Products tiles:
+	1.	12-Week Implementer — training modules, weekly group implementation, personal coach, scorecard in/out, 3 months CRM at 50%.
+	2.	Conclave — 12 months, 10 seats, weekly group + weekly 1:1 with Inder, monthly cross-industry guests, CRM at 50% for 12 months.
+	3.	Core (CRM) — £295/mo, video training included, DFY upgrades available, Waitlist.
+	•	Social proof placeholders (logos/testimonial blocks).
+	•	Final CTA bar: Apply Implementer / Apply Conclave / Join CRM Waitlist.
+
+Implementer /implementer
+	•	Headline: “The 12-Week Implementer: from uncertainty to implementation.”
+	•	3 months plan:
+	•	Month 1: Vision/positioning/pricing/KPIs
+	•	Month 2: Demand & patient flow (Scorecard, website CRO, scripts)
+	•	Month 3: Systems & scale (SOPs, capacity, automation blueprint)
+	•	What you get list + Investment: £6,000 + VAT (founder pricing).
+	•	Form: “Apply for Implementer” → API route → GHL_WEBHOOK_URL.
+
+Conclave /conclave
+	•	Headline: “BirdiSkool Conclave — 10 seats only.”
+	•	Includes weekly 1:1 with Inder, weekly group, quarterly London intensives, monthly guests (law/finance/recruitment/media).
+	•	Investment: £25,000 + VAT / year.
+	•	Exclusivity text if needed later.
+	•	Form: “Apply for Conclave” → API route → GHL_WEBHOOK_URL.
+
+CRM /crm
+	•	Headline: “BirdiSkool Core (CRM) — Coming Soon.”
+	•	Features: automation, booking, follow-ups, dashboards, video training; DFY add-ons.
+	•	Pricing: £295/month (founder’s early access).
+	•	Waitlist form → GHL_WEBHOOK_URL.
+
+About /about
+	•	Founder story (authority & trust): 7-figure practice, minimally invasive pioneer, multi-award-winning surgeon; why BirdiSkool exists; mission to transform hidden experts into visible leaders.
+
+Contact /contact
+	•	Contact details, map placeholder.
+	•	Contact form → GHL_WEBHOOK_URL (fields: name, email, role, message).
+
+Legal: /privacy, /terms
+	•	Generate sensible GDPR-friendly templates with clinic/business context.
+
+Forms → GoHighLevel
+	•	All forms post to /api/submit with formName param and JSON body; serverless function validates, adds source path + timestamp, forwards payload to process.env.GHL_WEBHOOK_URL with fetch POST. Handle success/fail JSON. Honeypot + basic rate limit.
+
+Components
+	•	Header, Footer, Container, Button, Section, FeatureCard, PricingCard, Testimonial, Form (reusable with schema + endpoint param), BlogList, PostHeader.
+	•	ThemeProvider for Tailwind and shadcn/ui.
+
+Blog (seed 5 posts, MDX)
+
+Create /content/blog with 5 posts (frontmatter: title, slug, excerpt, date, tags, ogImage):
+	1.	Why Most Private Practices Stall (and How to Fix It)
+	•	slug: why-practices-stall
+	•	key ideas: lack of niche, no KPI dashboard, inconsistent demand.
+	2.	The Healthcare Growth Blueprint: 7 Steps to Scale
+	•	slug: healthcare-growth-blueprint
+	•	outline the 7 pillars; simple worksheets.
+	3.	Why Agencies Fail Doctors — and What Actually Works
+	•	slug: why-agencies-fail-doctors
+	•	compliance, patient journey nuance, owner-led authority content.
+	4.	From Overwhelm to Systems: The 90-Day Turnaround
+	•	slug: 90-day-turnaround
+	•	12-week implementer structure; scorecard in/out.
+	5.	Personal Brand vs Clinic Brand in Healthcare
+	•	slug: personal-vs-clinic-brand
+	•	KPI concept; people follow people; doctor as K.P.I. with clinic halo.
+
+Each MDX should include at least one callout and a CTA footer linking to Implementer/Conclave/CRM Waitlist.
+
+SEO & Social
+	•	Dynamic metadata per page and post.
+	•	Generate /sitemap.xml, /robots.txt.
+	•	OG image defaults using brand colours/logo; twitter card summary_large.
+
+Accessibility & Performance
+	•	Semantic headings, alt text, focus states, aria labels; Lighthouse 90+ targets.
+
+Assets
+	•	Create a simple wordmark logo BirdiSkool (Indigo “Birdi”, Blue “Skool”), export SVG in /public/logo.svg and favicon set.
+	•	Social share image template using brand palette.
+
+Acceptance Criteria (must pass)
+	1.	All routes build and deploy locally (npm run dev) and production (npm run build).
+	2.	Forms submit to /api/submit and forward to GHL_WEBHOOK_URL with field mapping.
+	3.	Home/Implementer/Conclave/CRM pages contain the specified copy blocks & CTAs.
+	4.	Blog index lists 5 seeded posts with excerpts & dates; each post loads with MDX.
+	5.	SEO: meta tags, sitemap, robots present; OG tags render.
+	6.	Responsive layout (mobile/tablet/desktop).
+	7.	Lighthouse: Performance/Accessibility/Best Practices/SEO ≥ 90 on Home.
+	8.	No TypeScript errors; ESLint clean.
+
+Nice-to-Haves (if time)
+	•	Sticky CTA on mobile.
+	•	/api/og endpoint for dynamic OG images.
+	•	Basic unit tests for the form handler.
+
+Deliverables: Complete Next.js project with instructions in README.md (setup .env.local, run, deploy). Include sample .env.local.example.
+
+Contact to display: contact@birdiskool.com
+
+Remember: All forms/routes must forward to GoHighLevel via GHL_WEBHOOK_URL. Do not hardcode secrets. Use brand colours and fonts above across Tailwind config and global styles. Use shadcn/ui components for Cards, Buttons, Inputs with accessible labels.
+
+⸻
+
+If you want, I can also supply the exact MDX content for the 5 blogs to paste in.

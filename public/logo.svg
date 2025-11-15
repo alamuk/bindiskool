@@ -1,0 +1,25 @@
+<svg viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="birdiBrand" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1B1F3B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2D5BE3;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Birdi text -->
+  <text x="0" y="40" font-family="Playfair Display, serif" font-size="32" font-weight="700" fill="#1B1F3B">
+    Birdi
+  </text>
+  
+  <!-- Skool text -->
+  <text x="80" y="40" font-family="Playfair Display, serif" font-size="32" font-weight="700" fill="#2D5BE3">
+    Skool
+  </text>
+  
+  <!-- Small bird icon accent -->
+  <g transform="translate(165, 15)" fill="#E2B93B">
+    <path d="M15 8 Q18 5 20 8 Q22 10 20 12 L18 14 Q15 16 12 14 Q8 12 10 8 Q12 5 15 8 Z" />
+    <circle cx="17" cy="9" r="1.5" fill="#1B1F3B"/>
+    <path d="M12 12 Q8 14 6 16" stroke="#E2B93B" stroke-width="1.5" fill="none"/>
+  </g>
+</svg>
