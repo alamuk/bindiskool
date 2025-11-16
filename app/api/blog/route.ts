@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { blogPosts, insertBlogPostSchema } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
-import { requireAdmin } from "@/server/auth"; // 👈 change import
+import { requireAdmin } from "@/app/api/admin/auth";
+import { revalidatePath } from "next/cache";
 
-// GET /api/blog - List all blog posts
+// GET /api/blog - List all blog posts (optionally filter by status)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -12,8 +13,7 @@ export async function GET(request: NextRequest) {
 
     let posts;
 
-    // Filter by status if provided
-    if (status === "published") {
+    if (status === "published") { 
       posts = await db
         .select()
         .from(blogPosts)
@@ -50,11 +50,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Convert publishedAt from string to Date (if present)
-    if (body.publishedAt) {
-      body.publishedAt = new Date(body.publishedAt);
-    }
-
     // Validate input
     const validatedData = insertBlogPostSchema.parse(body);
 
@@ -62,23 +57,40 @@ export async function POST(request: NextRequest) {
     if (!validatedData.slug) {
       validatedData.slug = validatedData.title
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
     }
 
-    // If publishing, set publishedAt if still missing
-    if (validatedData.status === 'published' && !validatedData.publishedAt) {
+    // If publishing, set publishedAt
+    if (validatedData.status === "published" && !validatedData.publishedAt) {
       validatedData.publishedAt = new Date();
     }
 
-    const [newPost] = await db.insert(blogPosts).values(validatedData).returning();
+    const [newPost] = await db
+      .insert(blogPosts)
+      .values(validatedData)
+      .returning();
+
+    // 🔁 Revalidate blog list + the new post page
+    revalidatePath("/blog");
+    if (newPost.slug) {
+      revalidatePath(`/blog/${newPost.slug}`);
+    }
 
     return NextResponse.json({ post: newPost }, { status: 201 });
   } catch (error) {
-    console.error('Error creating blog post:', error);
+    console.error("Error creating blog post:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create blog post' },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to create blog post",
+      },
       { status: 400 }
     );
   }
 }
+
+
+
