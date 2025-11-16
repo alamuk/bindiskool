@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { createHash } from 'crypto';
 
-function getJWTSecret(): Uint8Array {
+export function getJWTSecret(): Uint8Array {
   const adminPassword = process.env.ADMIN_PASSWORD;
   if (!adminPassword) {
     throw new Error('ADMIN_PASSWORD must be configured');

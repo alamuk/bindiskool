@@ -91,7 +91,7 @@ export default function AdminDashboard() {
           <div className="flex gap-4">
             <Button
               onClick={() => router.push('/admin/dashboard/new')}
-              className="bg-brand-blue hover:bg-blue-700"
+              className="bg-brand-blog hover:bg-blue-600"
               data-testid="button-new-post"
             >
               <Plus className="w-4 h-4 mr-2" />

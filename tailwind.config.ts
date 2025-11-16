@@ -51,6 +51,7 @@ const config = {
         ring: "var(--ring)",
         "brand-indigo": "var(--brand-indigo)",
         "brand-blue": "var(--brand-blue)",
+        "brand-blog": "var(--brand-blog)",
         "brand-emerald": "var(--brand-emerald)",
         "brand-gold": "var(--brand-gold)",
         "brand-slate": "var(--brand-slate)",

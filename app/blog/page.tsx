@@ -63,7 +63,7 @@ export default async function BlogPage() {
                         {post.featuredImage ? (
                           <img src={post.featuredImage} alt={post.title} className="aspect-video object-cover" />
                         ) : (
-                          <div className={`aspect-video bg-gradient-to-br ${gradient}`}></div>
+                          <div className={`aspect-video bg-linear-to-br ${gradient}`}></div>
                         )}
                         <div className="p-6">
                           <div className="flex items-center text-sm text-brand-slate mb-3">
@@ -77,7 +77,7 @@ export default async function BlogPage() {
                           <p className="text-brand-slate mb-4">
                             {post.excerpt}
                           </p>
-                          <Link
+     ``                     <Link
                             href={`/blog/${post.slug}`}
                             className="text-brand-blue font-montserrat font-semibold hover:underline"
                             data-testid={`link-read-more-${post.slug}`}
