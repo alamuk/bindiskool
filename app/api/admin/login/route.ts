@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       .setExpirationTime("24h")
       .sign(jwtSecret);
 
-    // ✅ Set cookie using NextResponse, not cookies()
+    // Set cookie using NextResponse, not cookies()
     const res = NextResponse.json({ success: true }, { status: 200 });
 
     res.cookies.set("admin_token", token, {

@@ -1,4 +1,3 @@
-// components/RichTextEditor.tsx
 "use client";
 
 import { useRef, useState } from "react";
@@ -6,6 +5,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
+import TextAlign from "@tiptap/extension-text-align";
 import { Button } from "@/components/ui/button";
 import {
   Bold,
@@ -16,6 +16,9 @@ import {
   Heading2,
   Link as LinkIcon,
   Image as ImageIcon,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
 } from "lucide-react";
 
 interface RichTextEditorProps {
@@ -29,14 +32,21 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // IMPORTANT: only disable the built-in link,
+        // leave heading / paragraph enabled so H1/H2 work
+        link: false,
+      }),
       Image,
       Link.configure({
         openOnClick: false,
       }),
+      TextAlign.configure({
+        types: ["heading", "paragraph"],
+      }),
     ],
     content,
-    immediatelyRender: false, // 👈 fixes SSR hydration error
+    immediatelyRender: false, // fix SSR warning
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -100,15 +110,16 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
 
   return (
     <div className="border rounded-lg">
-      {/* Hidden input for actual upload */}
+      {/* hidden file input */}
       <input
         type="file"
         accept="image/*"
         ref={fileInputRef}
-        style={{ display: "none" }}
+        className="hidden"
         onChange={handleFileChange}
       />
 
+      {/* toolbar */}
       <div className="border-b p-2 flex flex-wrap gap-1 bg-gray-50">
         <Button
           type="button"
@@ -123,6 +134,7 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         >
           <Heading1 className="w-4 h-4" />
         </Button>
+
         <Button
           type="button"
           variant="ghost"
@@ -136,6 +148,7 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         >
           <Heading2 className="w-4 h-4" />
         </Button>
+
         <Button
           type="button"
           variant="ghost"
@@ -145,6 +158,7 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         >
           <Bold className="w-4 h-4" />
         </Button>
+
         <Button
           type="button"
           variant="ghost"
@@ -154,6 +168,7 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         >
           <Italic className="w-4 h-4" />
         </Button>
+
         <Button
           type="button"
           variant="ghost"
@@ -163,6 +178,7 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         >
           <List className="w-4 h-4" />
         </Button>
+
         <Button
           type="button"
           variant="ghost"
@@ -172,11 +188,43 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         >
           <ListOrdered className="w-4 h-4" />
         </Button>
+
         <Button type="button" variant="ghost" size="sm" onClick={addLink}>
           <LinkIcon className="w-4 h-4" />
         </Button>
 
-        {/* Upload to Blob */}
+        {/* alignment */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().setTextAlign("left").run()}
+          className={editor.isActive({ textAlign: "left" }) ? "bg-gray-200" : ""}
+        >
+          <AlignLeft className="w-4 h-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().setTextAlign("center").run()}
+          className={
+            editor.isActive({ textAlign: "center" }) ? "bg-gray-200" : ""
+          }
+        >
+          <AlignCenter className="w-4 h-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().setTextAlign("right").run()}
+          className={editor.isActive({ textAlign: "right" }) ? "bg-gray-200" : ""}
+        >
+          <AlignRight className="w-4 h-4" />
+        </Button>
+
+        {/* Blob upload */}
         <Button
           type="button"
           variant="ghost"
@@ -188,7 +236,6 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
           {isUploading ? "Uploading..." : "Upload"}
         </Button>
 
-        {/* Optional: keep “insert by URL” as well */}
         <Button
           type="button"
           variant="ghost"
@@ -199,9 +246,10 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         </Button>
       </div>
 
+      {/* editor area */}
       <EditorContent
         editor={editor}
-        className="prose max-w-none p-4 min-h-[400px] focus:outline-none"
+        className="prose prose-lg max-w-none p-4 min-h-[400px] focus:outline-none"
       />
     </div>
   );
