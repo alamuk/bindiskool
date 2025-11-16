@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 
-export const runtime = "nodejs"; // safer for file uploads
+export const runtime = "nodejs"; // important for file uploads
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // optional: limit size (example: 10 MB)
+    // optional: 10MB limit
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
@@ -24,15 +24,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Give each upload a unique path
     const fileName = `blog/${Date.now()}-${file.name}`;
 
     // Upload to Vercel Blob
     const blob = await put(fileName, file, {
-      access: "public", // so you can use the URL directly in <img>
+      access: "public",
     });
 
-    // Return the URL to the client
     return NextResponse.json(
       { url: blob.url },
       { status: 200 }

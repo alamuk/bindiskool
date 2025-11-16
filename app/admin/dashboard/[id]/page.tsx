@@ -113,7 +113,7 @@ export default function EditBlogPostPage() {
         console.error("Upload failed:", res.status, text);
         throw new Error("Upload failed");
       }
-``
+
       const data = await res.json();
       const url = data.url as string;
 
