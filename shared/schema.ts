@@ -15,7 +15,7 @@ export const blogPosts = pgTable("blog_posts", {
   title: text("title").notNull(),
   excerpt: text("excerpt").notNull(),
   content: text("content").notNull(),
-  featuredImage: text("featured_image"),
+  featuredImage: text("featured_image").notNull(),
   category: text("category").notNull(),
   tags: text("tags").array(),
   status: text("status").notNull().default("draft"), // 'draft' or 'published'

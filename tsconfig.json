@@ -1,4 +1,45 @@
 {
+  "compilerOptions": {
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
+    "noEmit": true,
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable"
+    ],
+    "jsx": "preserve",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "types": [
+      "node"
+    ],
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@shared/*": [
+        "./shared/*"
+      ],
+      "@assets/*": [
+        "./attached_assets/*"
+      ]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
   "include": [
     "app/**/*",
     "components/**/*",
@@ -14,49 +55,7 @@
     "node_modules",
     "build",
     "dist",
-    "client/**/*",
+    ".next",
     "**/*.test.ts"
-  ],
-  "compilerOptions": {
-    "incremental": true,
-    "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
-    "noEmit": true,
-    "module": "ESNext",
-    "strict": true,
-    "lib": [
-      "esnext",
-      "dom",
-      "dom.iterable"
-    ],
-    "jsx": "preserve",
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "allowImportingTsExtensions": true,
-    "moduleResolution": "bundler",
-    "baseUrl": ".",
-    "types": [
-      "node",
-      "vite/client"
-    ],
-    "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "@shared/*": [
-        "./shared/*"
-      ],
-      "@assets/*": [
-        "./attached_assets/*"
-      ]
-    },
-    "target": "ES2017",
-    "allowJs": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
-  }
+  ]
 }

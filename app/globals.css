@@ -1,103 +1,132 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@500;600;700&display=swap');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+@plugin "tailwindcss-animate";
+@plugin "@tailwindcss/typography";
 
-:root {
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(224 71% 4%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(224 71% 4%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(224 71% 4%);
-  --primary: hsl(220 14% 96%);
-  --primary-foreground: hsl(220.9 39.3% 11%);
-  --secondary: hsl(220 14% 96%);
-  --secondary-foreground: hsl(220.9 39.3% 11%);
-  --muted: hsl(220 14% 96%);
-  --muted-foreground: hsl(220 8.9% 46.1%);
-  --accent: hsl(220 14% 96%);
-  --accent-foreground: hsl(220.9 39.3% 11%);
-  --destructive: hsl(0 84.2% 60.2%);
-  --destructive-foreground: hsl(210 20% 98%);
-  --border: hsl(220 13% 91%);
-  --input: hsl(220 13% 91%);
-  --ring: hsl(224 71% 4%);
-  --radius: 0.75rem;
-
-  /* BirdiSkool Brand Colors */
-  --brand-indigo: hsl(228 41% 16%);
-  --brand-blue: hsl(220 73% 53%);
-  --brand-emerald: hsl(162 61% 41%);
-  --brand-gold: hsl(46 71% 56%);
-  --brand-slate: hsl(223 13% 48%);
-
-  --font-playfair: 'Playfair Display', serif;
-  --font-inter: 'Inter', sans-serif;
-  --font-montserrat: 'Montserrat', sans-serif;
-}
-
-.dark {
-  --background: hsl(224 71% 4%);
-  --foreground: hsl(210 20% 98%);
-  --card: hsl(224 71% 4%);
-  --card-foreground: hsl(210 20% 98%);
-  --popover: hsl(224 71% 4%);
-  --popover-foreground: hsl(210 20% 98%);
-  --primary: hsl(210 20% 98%);
-  --primary-foreground: hsl(220.9 39.3% 11%);
-  --secondary: hsl(215 27.9% 16.9%);
-  --secondary-foreground: hsl(210 20% 98%);
-  --muted: hsl(215 27.9% 16.9%);
-  --muted-foreground: hsl(217.9 10.6% 64.9%);
-  --accent: hsl(215 27.9% 16.9%);
-  --accent-foreground: hsl(210 20% 98%);
-  --destructive: hsl(0 62.8% 30.6%);
-  --destructive-foreground: hsl(210 20% 98%);
-  --border: hsl(215 27.9% 16.9%);
-  --input: hsl(215 27.9% 16.9%);
-  --ring: hsl(216 12.2% 83.9%);
-}
-
+/* Base design tokens */
 @layer base {
+  :root {
+    --background: hsl(0 0% 100%);
+    --foreground: hsl(224 71% 4%);
+
+    --card: hsl(0 0% 100%);
+    --card-foreground: hsl(224 71% 4%);
+
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(224 71% 4%);
+
+    --primary: hsl(220 14% 96%);
+    --primary-foreground: hsl(220.9 39.3% 11%);
+
+    --secondary: hsl(220 14% 96%);
+    --secondary-foreground: hsl(220.9 39.3% 11%);
+
+    --muted: hsl(220 14% 96%);
+    --muted-foreground: hsl(220 8.9% 46.1%);
+
+    --accent: hsl(220 14% 96%);
+    --accent-foreground: hsl(220.9 39.3% 11%);
+
+    --destructive: hsl(0 84.2% 60.2%);
+    --destructive-foreground: hsl(210 20% 98%);
+
+    --border: hsl(220 13% 91%);
+    --input: hsl(220 13% 91%);
+    --ring: hsl(224 71% 4%);
+
+    --radius: 0.75rem;
+
+    /* BirdiSkool Brand Colors */
+    --brand-indigo: hsl(228 41% 16%);
+    --brand-blue: hsl(220 73% 53%);
+    --brand-emerald: hsl(162 61% 41%);
+    --brand-gold: hsl(46 71% 56%);
+    --brand-slate: hsl(223 13% 48%);
+
+    /* Fonts */
+    --font-playfair: "Playfair Display", serif;
+    --font-inter: "Inter", sans-serif;
+    --font-montserrat: "Montserrat", sans-serif;
+  }
+
+  .dark {
+    --background: hsl(224 71% 4%);
+    --foreground: hsl(210 20% 98%);
+
+    --card: hsl(224 71% 4%);
+    --card-foreground: hsl(210 20% 98%);
+
+    --popover: hsl(224 71% 4%);
+    --popover-foreground: hsl(210 20% 98%);
+
+    --primary: hsl(210 20% 98%);
+    --primary-foreground: hsl(220.9 39.3% 11%);
+
+    --secondary: hsl(215 27.9% 16.9%);
+    --secondary-foreground: hsl(210 20% 98%);
+
+    --muted: hsl(215 27.9% 16.9%);
+    --muted-foreground: hsl(217.9 10.6% 64.9%);
+
+    --accent: hsl(215 27.9% 16.9%);
+    --accent-foreground: hsl(210 20% 98%);
+
+    --destructive: hsl(0 62.8% 30.6%);
+    --destructive-foreground: hsl(210 20% 98%);
+
+    --border: hsl(215 27.9% 16.9%);
+    --input: hsl(215 27.9% 16.9%);
+    --ring: hsl(216 12.2% 83.9%);
+  }
+
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
 
+/* Utilities */
 @layer utilities {
   .font-playfair {
     font-family: var(--font-playfair);
   }
+
   .font-inter {
     font-family: var(--font-inter);
   }
+
   .font-montserrat {
     font-family: var(--font-montserrat);
   }
-  
+
   .bg-gradient-brand {
-    background: linear-gradient(135deg, hsl(228 41% 16%) 0%, hsl(220 73% 53%) 100%);
+    background: linear-gradient(
+      135deg,
+      hsl(228 41% 16%) 0%,
+      hsl(220 73% 53%) 100%
+    );
   }
-  
+
   .text-gradient-brand {
     background: linear-gradient(135deg, hsl(220 73% 53%), hsl(162 61% 41%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
+
   .shadow-brand {
     box-shadow: 0 10px 40px hsla(220, 73%, 53%, 0.1);
   }
-  
+
   .hover-lift {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition:
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
   }
-  
+
   .hover-lift:hover {
     transform: translateY(-5px);
     box-shadow: 0 20px 60px hsla(220, 73%, 53%, 0.15);

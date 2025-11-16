@@ -1,127 +1,227 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { RichTextEditor } from '@/components/RichTextEditor';
-import { ArrowLeft } from 'lucide-react';
-import type { BlogPost } from '@shared/schema';
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { ArrowLeft, Upload } from "lucide-react";
 
-export default function EditBlogPost() {
-  const params = useParams();
-  const [post, setPost] = useState<BlogPost | null>(null);
-  const [title, setTitle] = useState('');
-  const [slug, setSlug] = useState('');
-  const [excerpt, setExcerpt] = useState('');
-  const [content, setContent] = useState('');
-  const [category, setCategory] = useState('');
-  const [tags, setTags] = useState('');
-  const [featuredImage, setFeaturedImage] = useState('');
-  const [metaTitle, setMetaTitle] = useState('');
-  const [metaDescription, setMetaDescription] = useState('');
-  const [status, setStatus] = useState<'draft' | 'published'>('draft');
-  const [isLoading, setIsLoading] = useState(false);
-  
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RichTextEditor } from "@/components/RichTextEditor";
+import { useToast } from "@/hooks/use-toast";
+
+import type { BlogPost } from "@shared/schema";
+
+export default function EditBlogPostPage() {
   const router = useRouter();
+  const params = useParams<{ id: string }>();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchPost();
-  }, [params.id]);
+  const [post, setPost] = useState<BlogPost | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchPost = async () => {
-    try {
-      const response = await fetch(`/api/blog/${params.id}`);
-      const data = await response.json();
-      
-      if (data.post) {
-        const p = data.post;
+  // form state
+  const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+  const [excerpt, setExcerpt] = useState("");
+  const [category, setCategory] = useState("");
+  const [tags, setTags] = useState("");
+  const [featuredImage, setFeaturedImage] = useState("");
+  const [content, setContent] = useState("");
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
+  const [status, setStatus] = useState<"draft" | "published">("draft");
+  const [isSaving, setIsSaving] = useState(false);
+
+  // remember original featured image so API can delete it if replaced
+  const [originalFeaturedImage, setOriginalFeaturedImage] = useState<
+    string | null
+  >(null);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // ---------------------------------------------------------------------------
+  // Load post
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const fetchPost = async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch(`/api/blog/${params.id}`);
+        if (!res.ok) {
+          throw new Error("Failed to load post");
+        }
+
+        const data = await res.json();
+        const p: BlogPost = data.post;
+
         setPost(p);
         setTitle(p.title);
         setSlug(p.slug);
         setExcerpt(p.excerpt);
-        setContent(p.content);
         setCategory(p.category);
-        setTags(p.tags?.join(', ') || '');
-        setFeaturedImage(p.featuredImage || '');
-        setMetaTitle(p.metaTitle || '');
-        setMetaDescription(p.metaDescription || '');
-        setStatus(p.status as 'draft' | 'published');
+        setTags(p.tags ? p.tags.join(", ") : "");
+        setFeaturedImage(p.featuredImage || "");
+        setOriginalFeaturedImage(p.featuredImage || null);
+        setContent(p.content);
+        setMetaTitle(p.metaTitle || "");
+        setMetaDescription(p.metaDescription || "");
+        setStatus((p.status as "draft" | "published") ?? "draft");
+      } catch (err) {
+        console.error(err);
+        toast({
+          title: "Error",
+          description: "Failed to load blog post",
+          variant: "destructive",
+        });
+        router.push("/admin/dashboard");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch post',
-        variant: 'destructive',
+    };
+
+    fetchPost();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.id]);
+
+  // ---------------------------------------------------------------------------
+  // Featured image upload
+  // ---------------------------------------------------------------------------
+  const handleFeaturedImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFeaturedImageChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
       });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Upload failed:", res.status, text);
+        throw new Error("Upload failed");
+      }
+``
+      const data = await res.json();
+      const url = data.url as string;
+
+      setFeaturedImage(url);
+
+      toast({
+        title: "Image uploaded",
+        description: "Your featured image has been uploaded.",
+      });
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Upload failed",
+        description: "Could not upload image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent, newStatus?: 'draft' | 'published') => {
-    e.preventDefault();
-    setIsLoading(true);
+  // ---------------------------------------------------------------------------
+  // Save handler (used by both buttons)
+  // ---------------------------------------------------------------------------
+  const handleSave = async (
+    event: React.SyntheticEvent,
+    nextStatus: "draft" | "published"
+  ) => {
+    event.preventDefault();
+    if (!post) return;
 
-    const finalStatus = newStatus || status;
+    setIsSaving(true);
 
     try {
       const response = await fetch(`/api/blog/${params.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
           slug,
           excerpt,
           content,
           category,
-          tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+          tags: tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
           featuredImage: featuredImage || null,
           metaTitle: metaTitle || null,
           metaDescription: metaDescription || null,
-          status: finalStatus,
-          publishedAt: finalStatus === 'published' && post?.status === 'draft' ? new Date() : post?.publishedAt,
+          status: nextStatus,
+          // send previous featured image so API can delete it if changed
+          previousFeaturedImage: originalFeaturedImage,
         }),
       });
 
-      if (response.ok) {
-        toast({
-          title: 'Success',
-          description: 'Blog post updated successfully',
-        });
-        router.push('/admin/dashboard');
-      } else {
-        const error = await response.json();
-        toast({
-          title: 'Error',
-          description: error.error || 'Failed to update post',
-          variant: 'destructive',
-        });
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.error || "Failed to update post");
       }
-    } catch (error) {
+
+      const { post: updated } = await response.json();
+      setPost(updated);
+      setOriginalFeaturedImage(updated.featuredImage || null);
+      setStatus(updated.status as "draft" | "published");
+
       toast({
-        title: 'Error',
-        description: 'Failed to update post',
-        variant: 'destructive',
+        title: "Saved",
+        description: "Blog post updated successfully.",
+      });
+
+      router.push("/admin/dashboard");
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to update post",
+        variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
-  if (!post) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  // ---------------------------------------------------------------------------
+  // Loading state
+  // ---------------------------------------------------------------------------
+  if (isLoading || !post) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
+  // ---------------------------------------------------------------------------
+  // UI
+  // ---------------------------------------------------------------------------
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
         <Button
           variant="ghost"
-          onClick={() => router.push('/admin/dashboard')}
+          onClick={() => router.push("/admin/dashboard")}
           className="mb-6"
-          data-testid="button-back"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Dashboard
@@ -129,10 +229,13 @@ export default function EditBlogPost() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="font-playfair text-2xl">Edit Blog Post</CardTitle>
+            <CardTitle className="font-playfair text-2xl">
+              Edit Blog Post
+            </CardTitle>
           </CardHeader>
+
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={(e) => handleSave(e, status)} className="space-y-6">
               <div>
                 <Label htmlFor="title">Title *</Label>
                 <Input
@@ -140,7 +243,6 @@ export default function EditBlogPost() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
-                  data-testid="input-title"
                 />
               </div>
 
@@ -151,7 +253,6 @@ export default function EditBlogPost() {
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
                   required
-                  data-testid="input-slug"
                 />
               </div>
 
@@ -163,7 +264,6 @@ export default function EditBlogPost() {
                   onChange={(e) => setExcerpt(e.target.value)}
                   rows={3}
                   required
-                  data-testid="textarea-excerpt"
                 />
               </div>
 
@@ -174,7 +274,6 @@ export default function EditBlogPost() {
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   required
-                  data-testid="input-category"
                 />
               </div>
 
@@ -184,17 +283,45 @@ export default function EditBlogPost() {
                   id="tags"
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
-                  data-testid="input-tags"
                 />
               </div>
 
+              {/* Featured image upload */}
               <div>
-                <Label htmlFor="featuredImage">Featured Image URL</Label>
-                <Input
-                  id="featuredImage"
-                  value={featuredImage}
-                  onChange={(e) => setFeaturedImage(e.target.value)}
-                  data-testid="input-featured-image"
+                <Label>Featured Image</Label>
+                <div className="mt-2 flex items-center gap-4">
+                  {featuredImage && (
+                    <img
+                      src={featuredImage}
+                      alt="Featured"
+                      className="h-24 w-24 object-cover rounded-md border"
+                    />
+                  )}
+
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleFeaturedImageClick}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload image
+                    </Button>
+                    <Input
+                      type="text"
+                      placeholder="Or paste image URL"
+                      value={featuredImage}
+                      onChange={(e) => setFeaturedImage(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFeaturedImageChange}
                 />
               </div>
 
@@ -203,9 +330,9 @@ export default function EditBlogPost() {
                 <RichTextEditor content={content} onChange={setContent} />
               </div>
 
+              {/* SEO */}
               <div className="border-t pt-6">
                 <h3 className="font-semibold mb-4">SEO Settings</h3>
-                
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="metaTitle">Meta Title</Label>
@@ -213,10 +340,9 @@ export default function EditBlogPost() {
                       id="metaTitle"
                       value={metaTitle}
                       onChange={(e) => setMetaTitle(e.target.value)}
-                      data-testid="input-meta-title"
+                      placeholder="Leave empty to use post title"
                     />
                   </div>
-
                   <div>
                     <Label htmlFor="metaDescription">Meta Description</Label>
                     <Textarea
@@ -224,42 +350,28 @@ export default function EditBlogPost() {
                       value={metaDescription}
                       onChange={(e) => setMetaDescription(e.target.value)}
                       rows={2}
-                      data-testid="textarea-meta-description"
+                      placeholder="Leave empty to use excerpt"
                     />
                   </div>
                 </div>
               </div>
 
               <div className="flex gap-4">
-                {status === 'published' ? (
-                  <Button
-                    type="submit"
-                    onClick={(e) => handleSubmit(e, 'draft')}
-                    variant="outline"
-                    disabled={isLoading}
-                    data-testid="button-unpublish"
-                  >
-                    Unpublish
-                  </Button>
-                ) : (
-                  <Button
-                    type="submit"
-                    onClick={(e) => handleSubmit(e, 'draft')}
-                    variant="outline"
-                    disabled={isLoading}
-                    data-testid="button-save-draft"
-                  >
-                    Save as Draft
-                  </Button>
-                )}
                 <Button
-                  type="submit"
-                  onClick={(e) => handleSubmit(e, 'published')}
-                  className="bg-brand-blue hover:bg-blue-700"
-                  disabled={isLoading}
-                  data-testid="button-publish"
+                  type="button"
+                  variant="outline"
+                  disabled={isSaving}
+                  onClick={(e) => handleSave(e, "draft")}
                 >
-                  {isLoading ? 'Saving...' : status === 'published' ? 'Update' : 'Publish Now'}
+                  Save as Draft
+                </Button>
+                <Button
+                  type="button"
+                  className="bg-brand-blue hover:bg-blue-700"
+                  disabled={isSaving}
+                  onClick={(e) => handleSave(e, "published")}
+                >
+                  {isSaving ? "Saving..." : "Save & Publish"}
                 </Button>
               </div>
             </form>
