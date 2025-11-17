@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { BlogCarousel } from "@/components/BlogCarousel";
+
 import { db } from "@/server/db";
 import { blogPosts } from "@shared/schema";
-import { eq } from "drizzle-orm";
 import type { BlogPost } from "@shared/schema";
+import { eq, and, ne, desc } from "drizzle-orm";
 
-// Helper to fetch a single post
+// ---------- DATA HELPERS ----------
+
 async function getBlogPost(slug: string): Promise<BlogPost | null> {
   const [post] = await db
     .select()
@@ -19,18 +23,31 @@ async function getBlogPost(slug: string): Promise<BlogPost | null> {
   return post || null;
 }
 
-// 👈 params is now a Promise
+async function getRecentPosts(currentPostId: string): Promise<BlogPost[]> {
+  const posts = await db
+    .select()
+    .from(blogPosts)
+    .where(
+      and(eq(blogPosts.status, "published"), ne(blogPosts.id, currentPostId))
+    )
+    .orderBy(desc(blogPosts.publishedAt))
+    .limit(10);
+
+  return posts;
+}
+
+// 👈 params is a Promise in Next 15 app router
 type PageProps = {
   params: Promise<{
     slug: string;
   }>;
 };
 
-// SEO metadata
-export async function generateMetadata(
-  { params }: PageProps
-): Promise<Metadata> {
-  // 👈 await params first
+// ---------- METADATA ----------
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const post = await getBlogPost(slug);
 
@@ -40,26 +57,28 @@ export async function generateMetadata(
     };
   }
 
+  const ogImage = post.featuredImage || "/og-image.png";
+
   return {
     title: post.metaTitle || `${post.title} - BirdiSkool Blog`,
     description: post.metaDescription || post.excerpt,
     openGraph: {
       title: post.title,
       description: post.excerpt,
-      images: post.featuredImage ? [post.featuredImage] : ["/og-image.png"],
+      images: [ogImage],
     },
     twitter: {
       card: "summary_large_image",
       title: post.title,
       description: post.excerpt,
-      images: post.featuredImage ? [post.featuredImage] : ["/og-image.png"],
+      images: [ogImage],
     },
   };
 }
 
-// Page component
+// ---------- PAGE ----------
+
 export default async function BlogPostPage({ params }: PageProps) {
-  // 👈 same here – await params
   const { slug } = await params;
   const post = await getBlogPost(slug);
 
@@ -75,10 +94,13 @@ export default async function BlogPostPage({ params }: PageProps) {
       })
     : "";
 
+  const recentPosts = await getRecentPosts(post.id);
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
       <main>
+        {/* MAIN ARTICLE */}
         <section className="py-12 bg-gray-50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto">
@@ -115,6 +137,15 @@ export default async function BlogPostPage({ params }: PageProps) {
             </div>
           </div>
         </section>
+
+        {/* RELATED / RECENT POSTS CAROUSEL */}
+        {recentPosts.length > 0 && (
+          <section className="py-12 bg-white">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+              <BlogCarousel title="Recent Posts" posts={recentPosts} />
+            </div>
+          </section>
+        )}
       </main>
       <Footer />
     </div>
