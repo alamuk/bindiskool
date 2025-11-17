@@ -5,9 +5,9 @@ import { blogPosts, updateBlogPostSchema } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { requireAdmin } from "@/app/api/admin/auth";
 import { del } from "@vercel/blob";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
-// --- helpers to detect & extract Vercel Blob image URLs ---
+// --------- Blob helpers ----------
 
 function isVercelBlobUrl(url: string): boolean {
   try {
@@ -34,13 +34,15 @@ function extractBlobImageUrlsFromHtml(html: string | null): string[] {
   return urls;
 }
 
-// GET /api/blog/[id] - Get single blog post
+// --------- GET /api/blog/[id] ----------
+
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
+
 
     const [post] = await db
       .select()
@@ -65,28 +67,34 @@ export async function GET(
   }
 }
 
-// PUT /api/blog/[id] - Update blog post (Admin only)
+// --------- PUT /api/blog/[id] (update) ----------
+
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   const authError = await requireAdmin(request);
   if (authError) return authError;
 
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const body = await request.json();
 
-    // pull out previousFeaturedImage – NOT part of DB schema
+    // Normalise publishedAt if it comes as a string
+    if (body.publishedAt && typeof body.publishedAt === "string") {
+      body.publishedAt = new Date(body.publishedAt);
+    }
+
+    // Pull out previousFeaturedImage – not part of DB schema
     const { previousFeaturedImage, ...rawData } = body as {
       previousFeaturedImage?: string | null;
       [key: string]: unknown;
     };
 
-    // validate only the actual blog fields
+    // Validate only actual blog fields
     const validatedData = updateBlogPostSchema.parse(rawData);
 
-    // If publishing, set publishedAt if missing
+    // If publishing and missing publishedAt, set it now
     if (validatedData.status === "published" && !validatedData.publishedAt) {
       validatedData.publishedAt = new Date();
     }
@@ -109,13 +117,7 @@ export async function PUT(
       );
     }
 
-    //Revalidate blog list + this post page
-    revalidatePath("/blog");
-    if (updatedPost.slug) {
-      revalidatePath(`/blog/${updatedPost.slug}`);
-    }
-
-    // 🧹 CLEAN UP OLD FEATURED IMAGE IF CHANGED
+    // 🧹 delete old featured image if it changed and was stored in Blob
     if (
       previousFeaturedImage &&
       previousFeaturedImage !== updatedPost.featuredImage &&
@@ -127,6 +129,11 @@ export async function PUT(
         console.error("Failed to delete old featured image blob:", err);
       }
     }
+
+    // Revalidate pages so changes show on the site
+    revalidatePath("/blog");
+    revalidatePath(`/blog/${updatedPost.slug}`);
+    revalidateTag("blog");
 
     return NextResponse.json({ post: updatedPost }, { status: 200 });
   } catch (error) {
@@ -143,18 +150,18 @@ export async function PUT(
   }
 }
 
-// DELETE /api/blog/[id] - Delete blog post (Admin only)
+// --------- DELETE /api/blog/[id] ----------
+
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }>  }
 ) {
   const authError = await requireAdmin(request);
   if (authError) return authError;
 
   try {
-    const { id } = params;
+   const { id } = await context.params;
 
-    // delete post from DB, but keep the record in memory
     const [deletedPost] = await db
       .delete(blogPosts)
       .where(eq(blogPosts.id, id))
@@ -167,7 +174,7 @@ export async function DELETE(
       );
     }
 
-    // collect all blob URLs: featured image + images inside content
+    // Collect all Blob URLs we want to delete
     const urlsToDelete = new Set<string>();
 
     if (
@@ -181,7 +188,7 @@ export async function DELETE(
       urlsToDelete.add(src);
     }
 
-    // delete blobs (best-effort – don't block user if it fails)
+    // Best-effort clean-up: delete blobs, but don't fail the API if one fails
     for (const url of urlsToDelete) {
       try {
         await del(url);
@@ -190,11 +197,9 @@ export async function DELETE(
       }
     }
 
-    // Revalidate blog list + the deleted post path
+    // Revalidate blog list; post page will 404 after deletion
     revalidatePath("/blog");
-    if (deletedPost.slug) {
-      revalidatePath(`/blog/${deletedPost.slug}`);
-    }
+    revalidateTag("blog");
 
     return NextResponse.json(
       { message: "Blog post deleted successfully" },
@@ -208,3 +213,6 @@ export async function DELETE(
     );
   }
 }
+
+
+

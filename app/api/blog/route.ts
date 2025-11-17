@@ -1,19 +1,20 @@
+// app/api/blog/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { blogPosts, insertBlogPostSchema } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { requireAdmin } from "@/app/api/admin/auth";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
-// GET /api/blog - List all blog posts (optionally filter by status)
+// GET /api/blog - List blog posts (optionally by status)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status"); // 'draft', 'published', or null for all
+    const status = searchParams.get("status"); // "draft", "published", or null for all
 
     let posts;
 
-    if (status === "published") { 
+    if (status === "published") {
       posts = await db
         .select()
         .from(blogPosts)
@@ -48,12 +49,18 @@ export async function POST(request: NextRequest) {
   if (authError) return authError;
 
   try {
+    // 1️⃣ Read raw body
     const body = await request.json();
 
-    // Validate input
+    // 2️⃣ Normalise publishedAt: string -> Date
+    if (body.publishedAt && typeof body.publishedAt === "string") {
+      body.publishedAt = new Date(body.publishedAt);
+    }
+
+    // 3️⃣ Validate with Zod
     const validatedData = insertBlogPostSchema.parse(body);
 
-    // Create slug from title if not provided
+    // 4️⃣ Create slug from title if not provided
     if (!validatedData.slug) {
       validatedData.slug = validatedData.title
         .toLowerCase()
@@ -61,7 +68,7 @@ export async function POST(request: NextRequest) {
         .replace(/(^-|-$)/g, "");
     }
 
-    // If publishing, set publishedAt
+    // 5️⃣ If publishing and no publishedAt, set it now
     if (validatedData.status === "published" && !validatedData.publishedAt) {
       validatedData.publishedAt = new Date();
     }
@@ -71,11 +78,11 @@ export async function POST(request: NextRequest) {
       .values(validatedData)
       .returning();
 
-    // 🔁 Revalidate blog list + the new post page
+    // 6️⃣ Revalidate pages so the new post shows up immediately
+    revalidatePath("/");
     revalidatePath("/blog");
-    if (newPost.slug) {
-      revalidatePath(`/blog/${newPost.slug}`);
-    }
+    revalidatePath(`/blog/${newPost.slug}`);
+    revalidateTag("blog");
 
     return NextResponse.json({ post: newPost }, { status: 201 });
   } catch (error) {
@@ -91,6 +98,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
 
 
