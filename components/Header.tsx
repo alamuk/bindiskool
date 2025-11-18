@@ -1,24 +1,28 @@
-'use client'
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Menu, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import logoImage from '@assets/birdiskool-logo.png';
+import React, { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import logoImage from "@assets/birdiskool-logo.png";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navItems = [
-    { href: '/', label: 'Home' },
-    { href: 'https://inder-oatroyqt.scoreapp.com/', label: 'Scorecard', external: true },
-    { href: '/implementer', label: 'Implementer' },
-    { href: '/conclave', label: 'Conclave' },
-    { href: '/crm', label: 'CRM' },
-    { href: '/blog', label: 'Blog' },
-    { href: '/about', label: 'About' },
-    { href: '/contact', label: 'Contact' },
+    { href: "/", label: "Home" },
+    { href: "/contact", label: "Contact" },
+    {
+      href: "https://inder-oatroyqt.scoreapp.com/",
+      label: "Scorecard",
+      external: true,
+    },
+    { href: "/implementer", label: "Implementer" },
+    { href: "/conclave", label: "Conclave" },
+    { href: "/crm", label: "CRM" },
+    { href: "/blog", label: "Blog" },
+    { href: "/about", label: "About" },
   ];
 
   return (
@@ -26,24 +30,28 @@ export function Header() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center py-2 px-2 bg-white rounded" data-testid="logo-link">
+          <Link
+            href="/"
+            className="flex items-center py-2 px-2 bg-white rounded"
+            data-testid="logo-link"
+          >
             <Image
               src={logoImage}
               alt="BirdiSkool"
               height={36}
               width={180}
               style={{
-                width: 'auto',
-                height: 'auto',
-                maxHeight: '36px'
+                width: "auto",
+                height: "auto",
+                maxHeight: "36px",
               }}
               priority
             />
           </Link>
-          
+
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
+            {navItems.map((item) =>
               item.external ? (
                 <a
                   key={item.href}
@@ -65,9 +73,9 @@ export function Header() {
                   {item.label}
                 </Link>
               )
-            ))}
+            )}
           </nav>
-          
+
           {/* Mobile menu button */}
           <Button
             variant="ghost"
@@ -88,7 +96,7 @@ export function Header() {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
-              {navItems.map((item) => (
+              {navItems.map((item) =>
                 item.external ? (
                   <a
                     key={item.href}
@@ -112,7 +120,7 @@ export function Header() {
                     {item.label}
                   </Link>
                 )
-              ))}
+              )}
             </div>
           </div>
         )}
