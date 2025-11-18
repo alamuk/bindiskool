@@ -1,13 +1,13 @@
 // app/api/blog/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { db } from "@/server/db";
 import { blogPosts, updateBlogPostSchema } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { requireAdmin } from "@/app/api/admin/auth";
 import { del } from "@vercel/blob";
-import { revalidatePath, revalidateTag } from "next/cache";
 
-// --------- Blob helpers ----------
+// --- helpers to detect Vercel Blob URLs ---
 
 function isVercelBlobUrl(url: string): boolean {
   try {
@@ -34,15 +34,83 @@ function extractBlobImageUrlsFromHtml(html: string | null): string[] {
   return urls;
 }
 
-// --------- GET /api/blog/[id] ----------
+function revalidateForPost(slug: string | null) {
+  revalidatePath("/");
+  revalidatePath("/blog");
+  if (slug) {
+    revalidatePath(`/blog/${slug}`);
+  }
+  revalidateTag("blog");
+}
 
+// DELETE /api/blog/[id]  (Admin only)
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const authError = await requireAdmin(request);
+  if (authError) return authError;
+
+  try {
+    const { id } = await context.params;
+
+    const [deletedPost] = await db
+      .delete(blogPosts)
+      .where(eq(blogPosts.id, id))
+      .returning();
+
+    if (!deletedPost) {
+      return NextResponse.json(
+        { error: "Blog post not found" },
+        { status: 404 }
+      );
+    }
+
+    // collect all blob URLs: featured image + images inside content
+    const urlsToDelete = new Set<string>();
+
+    if (
+      deletedPost.featuredImage &&
+      isVercelBlobUrl(deletedPost.featuredImage)
+    ) {
+      urlsToDelete.add(deletedPost.featuredImage);
+    }
+
+    for (const src of extractBlobImageUrlsFromHtml(deletedPost.content)) {
+      urlsToDelete.add(src);
+    }
+
+    // delete blobs (best-effort)
+    for (const url of urlsToDelete) {
+      try {
+        await del(url);
+      } catch (err) {
+        console.error("Failed to delete blob", url, err);
+      }
+    }
+
+    revalidateForPost(deletedPost.slug);
+
+    return NextResponse.json(
+      { message: "Blog post deleted successfully" },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error deleting blog post:", error);
+    return NextResponse.json(
+      { error: "Failed to delete blog post" },
+      { status: 500 }
+    );
+  }
+}
+
+// GET /api/blog/[id] - fetch one post
 export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await context.params;
-
 
     const [post] = await db
       .select()
@@ -67,8 +135,7 @@ export async function GET(
   }
 }
 
-// --------- PUT /api/blog/[id] (update) ----------
-
+// PUT /api/blog/[id] - full update (Admin only)
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -80,22 +147,29 @@ export async function PUT(
     const { id } = await context.params;
     const body = await request.json();
 
-    // Normalise publishedAt if it comes as a string
-    if (body.publishedAt && typeof body.publishedAt === "string") {
-      body.publishedAt = new Date(body.publishedAt);
-    }
-
-    // Pull out previousFeaturedImage – not part of DB schema
+    // pull out previousFeaturedImage – not part of DB schema
     const { previousFeaturedImage, ...rawData } = body as {
       previousFeaturedImage?: string | null;
       [key: string]: unknown;
     };
 
-    // Validate only actual blog fields
+    // normalise publishedAt if it's a string
+    if (
+      typeof rawData.publishedAt === "string" &&
+      rawData.publishedAt.length > 0
+    ) {
+      rawData.publishedAt = new Date(rawData.publishedAt);
+    } else if (!rawData.publishedAt) {
+      rawData.publishedAt = null;
+    }
+
     const validatedData = updateBlogPostSchema.parse(rawData);
 
-    // If publishing and missing publishedAt, set it now
-    if (validatedData.status === "published" && !validatedData.publishedAt) {
+    // If publishing, set publishedAt if missing
+    if (
+      validatedData.status === "published" &&
+      !validatedData.publishedAt
+    ) {
       validatedData.publishedAt = new Date();
     }
 
@@ -117,7 +191,7 @@ export async function PUT(
       );
     }
 
-    // 🧹 delete old featured image if it changed and was stored in Blob
+    // clean up old featured image if changed
     if (
       previousFeaturedImage &&
       previousFeaturedImage !== updatedPost.featuredImage &&
@@ -130,10 +204,7 @@ export async function PUT(
       }
     }
 
-    // Revalidate pages so changes show on the site
-    revalidatePath("/blog");
-    revalidatePath(`/blog/${updatedPost.slug}`);
-    revalidateTag("blog");
+    revalidateForPost(updatedPost.slug);
 
     return NextResponse.json({ post: updatedPost }, { status: 200 });
   } catch (error) {
@@ -150,69 +221,64 @@ export async function PUT(
   }
 }
 
-// --------- DELETE /api/blog/[id] ----------
-
-export async function DELETE(
+// PATCH /api/blog/[id] - lightweight update (used for status toggle)
+export async function PATCH(
   request: NextRequest,
-  context: { params: Promise<{ id: string }>  }
+  context: { params: Promise<{ id: string }> }
 ) {
   const authError = await requireAdmin(request);
   if (authError) return authError;
 
   try {
-   const { id } = await context.params;
+    const { id } = await context.params;
+    const body = (await request.json()) as {
+      status?: "draft" | "published";
+    };
 
-    const [deletedPost] = await db
-      .delete(blogPosts)
+    if (!body.status || !["draft", "published"].includes(body.status)) {
+      return NextResponse.json(
+        { error: "Invalid or missing status" },
+        { status: 400 }
+      );
+    }
+
+    const now = new Date();
+
+    const updateData: Partial<
+      Pick<typeof blogPosts.$inferSelect, "status" | "publishedAt" | "updatedAt">
+    > = {
+      status: body.status,
+      updatedAt: now,
+    };
+
+    if (body.status === "published") {
+      updateData.publishedAt = now;
+    } else {
+      // for drafts you can either keep publishedAt or null it out
+      updateData.publishedAt = null;
+    }
+
+    const [updatedPost] = await db
+      .update(blogPosts)
+      .set(updateData)
       .where(eq(blogPosts.id, id))
       .returning();
 
-    if (!deletedPost) {
+    if (!updatedPost) {
       return NextResponse.json(
         { error: "Blog post not found" },
         { status: 404 }
       );
     }
 
-    // Collect all Blob URLs we want to delete
-    const urlsToDelete = new Set<string>();
+    revalidateForPost(updatedPost.slug);
 
-    if (
-      deletedPost.featuredImage &&
-      isVercelBlobUrl(deletedPost.featuredImage)
-    ) {
-      urlsToDelete.add(deletedPost.featuredImage);
-    }
-
-    for (const src of extractBlobImageUrlsFromHtml(deletedPost.content)) {
-      urlsToDelete.add(src);
-    }
-
-    // Best-effort clean-up: delete blobs, but don't fail the API if one fails
-    for (const url of urlsToDelete) {
-      try {
-        await del(url);
-      } catch (err) {
-        console.error("Failed to delete blob", url, err);
-      }
-    }
-
-    // Revalidate blog list; post page will 404 after deletion
-    revalidatePath("/blog");
-    revalidateTag("blog");
-
-    return NextResponse.json(
-      { message: "Blog post deleted successfully" },
-      { status: 200 }
-    );
+    return NextResponse.json({ post: updatedPost }, { status: 200 });
   } catch (error) {
-    console.error("Error deleting blog post:", error);
+    console.error("Error patching blog post:", error);
     return NextResponse.json(
-      { error: "Failed to delete blog post" },
+      { error: "Failed to update blog post" },
       { status: 500 }
     );
   }
 }
-
-
-

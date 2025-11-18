@@ -1,39 +1,112 @@
-// app/api/blog/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { db } from "@/server/db";
 import { blogPosts, insertBlogPostSchema } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql, ilike, or, and } from "drizzle-orm";
 import { requireAdmin } from "@/app/api/admin/auth";
-import { revalidatePath, revalidateTag } from "next/cache";
 
-// GET /api/blog - List blog posts (optionally by status)
+// GET /api/blog - list posts with pagination, filters, search, stats
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status"); // "draft", "published", or null for all
 
-    let posts;
+    // filters
+    const status = searchParams.get("status"); // "draft" | "published" | null
+    const category = searchParams.get("category"); // category name | "all" | null
+    const q = (searchParams.get("q") || "").trim(); // search query
 
-    if (status === "published") {
-      posts = await db
-        .select()
-        .from(blogPosts)
-        .where(eq(blogPosts.status, "published"))
-        .orderBy(desc(blogPosts.publishedAt));
-    } else if (status === "draft") {
-      posts = await db
-        .select()
-        .from(blogPosts)
-        .where(eq(blogPosts.status, "draft"))
-        .orderBy(desc(blogPosts.createdAt));
-    } else {
-      posts = await db
-        .select()
-        .from(blogPosts)
-        .orderBy(desc(blogPosts.createdAt));
+    // pagination
+    const pageParam = Number(searchParams.get("page") ?? "1");
+    const limitParam = Number(searchParams.get("limit") ?? "9");
+    const page = Number.isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+    const limit = Number.isNaN(limitParam) || limitParam < 1 ? 9 : limitParam;
+    const offset = (page - 1) * limit;
+
+    // ----- STATS (global, not filtered) -----
+    const [{ totalCount }] = await db
+      .select({
+        totalCount: sql<string>`count(*)`,
+      })
+      .from(blogPosts);
+
+    const [{ publishedCount }] = await db
+      .select({
+        publishedCount: sql<string>`count(*)`,
+      })
+      .from(blogPosts)
+      .where(eq(blogPosts.status, "published"));
+
+    const [{ draftCount }] = await db
+      .select({
+        draftCount: sql<string>`count(*)`,
+      })
+      .from(blogPosts)
+      .where(eq(blogPosts.status, "draft"));
+
+    const stats = {
+      total: Number(totalCount || "0"),
+      published: Number(publishedCount || "0"),
+      draft: Number(draftCount || "0"),
+    };
+
+    // ----- CATEGORIES (for dropdown) -----
+    const categoryRows = await db
+      .select({ category: blogPosts.category })
+      .from(blogPosts)
+      .groupBy(blogPosts.category);
+
+    const categories = categoryRows
+      .map((row) => row.category)
+      .filter((c): c is string => Boolean(c));
+
+    // ----- FILTERS + SEARCH -----
+    const conditions = [];
+
+    if (status === "published" || status === "draft") {
+      conditions.push(eq(blogPosts.status, status));
     }
 
-    return NextResponse.json({ posts }, { status: 200 });
+    if (category && category !== "all") {
+      conditions.push(eq(blogPosts.category, category));
+    }
+
+    if (q) {
+      conditions.push(
+        or(
+          ilike(blogPosts.title, `%${q}%`),
+          ilike(blogPosts.excerpt, `%${q}%`),
+          ilike(blogPosts.category, `%${q}%`)
+        )
+      );
+    }
+
+    // Build base query with filters
+    let query = db.select().from(blogPosts);
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as typeof query;
+    }
+
+    const posts = await query
+      .orderBy(desc(blogPosts.publishedAt), desc(blogPosts.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const hasMore = posts.length === limit;
+
+    return NextResponse.json(
+      {
+        posts,
+        pagination: {
+          page,
+          limit,
+          hasMore,
+        },
+        stats,
+        categories,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error fetching blog posts:", error);
     return NextResponse.json(
@@ -52,13 +125,14 @@ export async function POST(request: NextRequest) {
     // 1️⃣ Read raw body
     const body = await request.json();
 
-    // 2️⃣ Normalise publishedAt: string -> Date
-    if (body.publishedAt && typeof body.publishedAt === "string") {
-      body.publishedAt = new Date(body.publishedAt);
-    }
+    // 2️⃣ Normalise publishedAt: string -> Date (or null)
+    const normalisedBody = {
+      ...body,
+      publishedAt: body.publishedAt ? new Date(body.publishedAt) : null,
+    };
 
     // 3️⃣ Validate with Zod
-    const validatedData = insertBlogPostSchema.parse(body);
+    const validatedData = insertBlogPostSchema.parse(normalisedBody);
 
     // 4️⃣ Create slug from title if not provided
     if (!validatedData.slug) {
@@ -69,7 +143,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 5️⃣ If publishing and no publishedAt, set it now
-    if (validatedData.status === "published" && !validatedData.publishedAt) {
+    if (
+      validatedData.status === "published" &&
+      !validatedData.publishedAt
+    ) {
       validatedData.publishedAt = new Date();
     }
 
@@ -98,5 +175,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
 
