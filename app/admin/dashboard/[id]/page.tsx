@@ -367,7 +367,7 @@ export default function EditBlogPostPage() {
                 </Button>
                 <Button
                   type="button"
-                  className="bg-brand-blue hover:bg-blue-700"
+                  className="bg-brand-blue hover:bg-blue-800 text-white"
                   disabled={isSaving}
                   onClick={(e) => handleSave(e, "published")}
                 >

@@ -288,7 +288,7 @@ export default function NewBlogPost() {
                 <Button
                   type="submit"
                   onClick={() => setStatus("published")}
-                  className="bg-brand-blue hover:bg-blue-700"
+                  className="bg-brand-blue hover:bg-blue-800 text-white"
                   disabled={isLoading}
                 >
                   {isLoading ? "Publishing..." : "Publish Now"}

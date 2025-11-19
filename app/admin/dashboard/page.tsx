@@ -350,10 +350,10 @@ export default function AdminDashboard() {
           <div className="flex flex-wrap gap-2 md:items-center">
             <Button
               onClick={() => router.push("/admin/dashboard/new")}
-              className="bg-brand-blue hover:bg-blue-700"
+              className="bg-brand-blue hover:bg-blue-800 text-white"
               data-testid="button-new-post"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-4 h-4 mr-2 " />
               New Post
             </Button>
             <Button
