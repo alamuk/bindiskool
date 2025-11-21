@@ -103,7 +103,7 @@ export default async function BlogPostPage({ params }: PageProps) {
       <main>
         {/* MAIN ARTICLE */}
         <section className="py-8 sm:py-12 bg-gray-50">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="container mx-auto px-6 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto">
               <div className="mb-4 sm:mb-6">
                 <Link

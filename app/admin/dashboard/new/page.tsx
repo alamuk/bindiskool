@@ -139,7 +139,7 @@ export default function NewBlogPost() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto">
         <Button
           variant="ghost"

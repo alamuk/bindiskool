@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">``
       <Header />
 
       {/* Main 404 Content */}
