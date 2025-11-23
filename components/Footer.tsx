@@ -122,7 +122,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-white/15 mt-10 pt-6 sm:mt-12 sm:pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-white/60 text-xs sm:text-sm text-center md:text-left">
-            © 2024 BirdiSkool Ltd. All rights reserved.
+            © 2025 BirdiSkool Ltd. All rights reserved.
           </p>
 
           <div className="flex items-center justify-center space-x-3 sm:space-x-4">
