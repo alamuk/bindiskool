@@ -2,6 +2,9 @@ import createMDX from '@next/mdx';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  images: {
+    qualities: [75, 95,],
+  },
   output: 'standalone',
   experimental: {
     mdxRs: true,
