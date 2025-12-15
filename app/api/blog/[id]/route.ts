@@ -38,9 +38,9 @@ function revalidateForPost(slug: string | null) {
   revalidatePath("/");
   revalidatePath("/blog");
   if (slug) {
-    revalidatePath(`/blog/${slug}`);
+    revalidatePath(`/blog/${slug}`, "page");
   }
-  revalidateTag("blog");
+  revalidateTag("blog", "layout");
 }
 
 // DELETE /api/blog/[id]  (Admin only)
