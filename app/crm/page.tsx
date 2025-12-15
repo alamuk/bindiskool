@@ -243,7 +243,7 @@ export default function CRMPage() {
               </h2>
               <p className="text-xl text-brand-slate mb-4">
                 Be the first to experience BirdiSkool Core and secure founder's
-                pricing when we launch in Q2 2025.
+                pricing when we launch in Q2 2026.
               </p>
               <div className="bg-brand-emerald/10 rounded-lg p-6 mb-8">
                 <p className="font-montserrat font-semibold text-brand-emerald text-lg">
