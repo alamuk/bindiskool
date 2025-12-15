@@ -8,7 +8,7 @@ import founderImage from "@assets/5c2ae072-35e8-407c-8f9b-d7923157e4e9_175926648
 
 // blog + carousel imports
 import { db } from "@/server/db";
-import { blogPosts } from "@shared/schema";
+import { blogPosts } from "@shared/schema"; 
 import type { BlogPost } from "@shared/schema";
 import { desc, eq } from "drizzle-orm";
 import { BlogCarousel } from "@/components/BlogCarousel";

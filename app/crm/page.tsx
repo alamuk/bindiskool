@@ -34,7 +34,7 @@ export default function CRMPage() {
                 <p className="text-lg mt-2 text-white/80">Founder's early access pricing</p>
               </div>
               <div className="bg-white text-brand-emerald text-sm font-montserrat font-semibold px-6 py-3 rounded-full inline-block">
-                LAUNCHING Q2 2025
+                LAUNCHING Q2 2026
               </div>
             </div>
           </div>
