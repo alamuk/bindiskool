@@ -122,19 +122,19 @@ export async function POST(request: NextRequest) {
   if (authError) return authError;
 
   try {
-    // 1️⃣ Read raw body
+    // 1Read raw body
     const body = await request.json();
 
-    // 2️⃣ Normalise publishedAt: string -> Date (or null)
+    // Normalise publishedAt: string -> Date (or null)
     const normalisedBody = {
       ...body,
       publishedAt: body.publishedAt ? new Date(body.publishedAt) : null,
     };
 
-    // 3️⃣ Validate with Zod
+    // Validate with Zod
     const validatedData = insertBlogPostSchema.parse(normalisedBody);
 
-    // 4️⃣ Create slug from title if not provided
+    //  Create slug from title if not provided
     if (!validatedData.slug) {
       validatedData.slug = validatedData.title
         .toLowerCase()
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
         .replace(/(^-|-$)/g, "");
     }
 
-    // 5️⃣ If publishing and no publishedAt, set it now
+    // If publishing and no publishedAt, set it now
     if (
       validatedData.status === "published" &&
       !validatedData.publishedAt
@@ -175,5 +175,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-``
