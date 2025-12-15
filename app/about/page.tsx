@@ -30,7 +30,7 @@ export default async function AboutPage() {
     .limit(8);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white">``
       <Header />
       <main>
         {/* Hero Section */}
