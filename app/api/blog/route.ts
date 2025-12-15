@@ -155,11 +155,11 @@ export async function POST(request: NextRequest) {
       .values(validatedData)
       .returning();
 
-    // 6️⃣ Revalidate pages so the new post shows up immediately
-    revalidatePath("/", "layout");
+    // Revalidate pages so the new post shows up immediately
+   revalidatePath("/", "layout");
    revalidatePath("/blog", "layout");
-    revalidatePath(`/blog/${newPost.slug}`);
-    revalidateTag("blog", "layout");
+   revalidatePath(`/blog/${newPost.slug}`, "page");
+   revalidateTag("blog", "layout");
 
     return NextResponse.json({ post: newPost }, { status: 201 });
   } catch (error) {
